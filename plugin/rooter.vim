@@ -47,12 +47,14 @@ if !exists('g:rooter_resolve_links')
   let g:rooter_resolve_links = 0
 endif
 
-
-" For third-parties.  Not used by plugin.
+" For third-parties. Not used by plugin.
 function! FindRootDirectory()
   return s:root()
 endfunction
 
+function! FindRootDirectoryOf(dir)
+  return s:root_of(a:dir)
+endfunction
 
 command! -bar Rooter call <SID>rooter()
 command! -bar RooterToggle call <SID>toggle()
@@ -110,6 +112,34 @@ function! s:activate()
   endfor
 
   return 0
+endfunction
+
+" Returns the root directory or an empty string if no root directory found.
+function! s:root_of(dir)
+  let dir = a:dir
+
+  " breadth-first search
+  while 1
+    for pattern in g:rooter_patterns
+      if pattern[0] == '!'
+        let [p, exclude] = [pattern[1:], 1]
+      else
+        let [p, exclude] = [pattern, 0]
+      endif
+      if s:match(dir, p)
+        if exclude
+          break
+        else
+          return dir
+        endif
+      endif
+    endfor
+
+    let [current, dir] = [dir, s:parent(dir)]
+    if current == dir | break | endif
+  endwhile
+
+  return ''
 endfunction
 
 
